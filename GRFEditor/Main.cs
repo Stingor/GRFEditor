@@ -148,12 +148,32 @@ namespace GRFEditor {
 			Directory.SetCurrentDirectory(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName));
 
 			var app = new App();
-			app.StartupUri = new Uri("EditorMainWindow.xaml", UriKind.Relative);
-			//app.StartupUri = new Uri("TestWindow.xaml", UriKind.Relative);
-			//app.StartupUri = new Uri("MapTest.xaml", UriKind.Relative);
-			//app.StartupUri = new Uri("Basic.xaml", UriKind.Relative);
-			//app.StartupUri = new Uri("WPF\\3DTests.xaml", UriKind.Relative);
-			//app.StartupUri = new Uri("Tests.xaml", UriKind.Relative);
+
+			string sprFile = null;
+			foreach (string arg in args) {
+				if (arg.EndsWith(".spr", StringComparison.OrdinalIgnoreCase)) {
+					sprFile = arg;
+					break;
+				}
+			}
+
+			if (sprFile != null) {
+				string capturedSprFile = sprFile;
+				app.Startup += (s, e) => {
+					var sprite = new GRFEditor.Tools.SpriteEditor.SpriteConverter(new[] { capturedSprFile });
+					sprite.Closed += (s2, e2) => System.Windows.Application.Current.Shutdown();
+					sprite.Show();
+				};
+			}
+			else {
+				app.StartupUri = new Uri("EditorMainWindow.xaml", UriKind.Relative);
+				//app.StartupUri = new Uri("TestWindow.xaml", UriKind.Relative);
+				//app.StartupUri = new Uri("MapTest.xaml", UriKind.Relative);
+				//app.StartupUri = new Uri("Basic.xaml", UriKind.Relative);
+				//app.StartupUri = new Uri("WPF\\3DTests.xaml", UriKind.Relative);
+				//app.StartupUri = new Uri("Tests.xaml", UriKind.Relative);
+			}
+
 			app.Run();
 		}
 

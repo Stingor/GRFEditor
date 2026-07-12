@@ -33,6 +33,14 @@ namespace GRFEditor.Tools.SpriteEditor {
 			});
 		}
 
+		public void Resize(GrfImageType type, List<int> list, float scaleX, float scaleY, GrfScalingMode scalingMode) {
+			_execute(() => {
+				foreach (var id in list) {
+					_act.Commands.SpriteResize(id, scaleX, scaleY, scalingMode);
+				}
+			});
+		}
+
 		public void InsertBefore(GrfImageType type, int insertIndex, List<string> files) {
 			if (files.Count == 0)
 				return;

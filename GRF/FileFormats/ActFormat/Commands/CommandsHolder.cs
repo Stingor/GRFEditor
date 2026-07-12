@@ -1091,6 +1091,17 @@ namespace GRF.FileFormats.ActFormat.Commands {
 		}
 
 		/// <summary>
+		/// Resizes a sprite image.
+		/// </summary>
+		/// <param name="absoluteIndex">The absolute index.</param>
+		/// <param name="scaleX">The horizontal scale factor.</param>
+		/// <param name="scaleY">The vertical scale factor.</param>
+		/// <param name="scalingMode">The scaling mode.</param>
+		public void SpriteResize(int absoluteIndex, float scaleX, float scaleY, GrfScalingMode scalingMode) {
+			_act.Commands.StoreAndExecute(new Resize(absoluteIndex, scaleX, scaleY, scalingMode));
+		}
+
+		/// <summary>
 		/// Inserts a sprite.
 		/// </summary>
 		/// <param name="relativeIndex">The relative index.</param>

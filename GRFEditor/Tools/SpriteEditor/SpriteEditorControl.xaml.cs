@@ -1,4 +1,5 @@
 ﻿using ErrorManager;
+using GRF.Core;
 using GRF.FileFormats;
 using GRF.FileFormats.ActFormat;
 using GRF.FileFormats.SprFormat;
@@ -21,6 +22,7 @@ using TokeiLibrary.Paths;
 using TokeiLibrary.Shortcuts;
 using TokeiLibrary.WPF;
 using TokeiLibrary.WPF.Styles.ListView;
+using Utilities;
 using Utilities.Extension;
 
 namespace GRFEditor.Tools.SpriteEditor {
@@ -159,6 +161,8 @@ namespace GRFEditor.Tools.SpriteEditor {
 		private void _menuToFlipVert2_Click(object sender, RoutedEventArgs e) => _spriteEditorLogic.Flip(GrfImageType.Bgra32, _getSelection(GrfImageType.Bgra32), FlipDirection.Vertical);
 		private void _menuToFlipHoriz1_Click(object sender, RoutedEventArgs e) => _spriteEditorLogic.Flip(GrfImageType.Indexed8, _getSelection(GrfImageType.Indexed8), FlipDirection.Horizontal);
 		private void _menuToFlipHoriz2_Click(object sender, RoutedEventArgs e) => _spriteEditorLogic.Flip(GrfImageType.Bgra32, _getSelection(GrfImageType.Bgra32), FlipDirection.Horizontal);
+		private void _menuResize1_Click(object sender, RoutedEventArgs e) => _showResizeDialog(GrfImageType.Indexed8);
+		private void _menuResize2_Click(object sender, RoutedEventArgs e) => _showResizeDialog(GrfImageType.Bgra32);
 		private void _menuToBgra32_Click(object sender, RoutedEventArgs e) => _spriteEditorLogic.Convert(GrfImageType.Indexed8, _getSelection(GrfImageType.Indexed8));
 		private void _menuToIndexed8_Click(object sender, RoutedEventArgs e) => _spriteEditorLogic.Convert(GrfImageType.Bgra32, _getSelection(GrfImageType.Bgra32));
 		private void _menuExtract1_Click(object sender, RoutedEventArgs e) => _extract(GrfImageType.Indexed8);
@@ -261,6 +265,114 @@ namespace GRFEditor.Tools.SpriteEditor {
 			}
 			catch (Exception err) {
 				ErrorHandler.HandleException(err);
+			}
+		}
+
+		private void _showResizeDialog(GrfImageType type) {
+			var selection = _getSelection(type);
+
+			if (selection.Count == 0)
+				return;
+
+			var dialog = WindowProvider.ShowWindow<ResizeDialog>(new ResizeDialog(), WpfUtilities.FindParentControl<Window>(this));
+
+			if (dialog.DialogResult == true) {
+				_spriteEditorLogic.Resize(type, selection, dialog.ScaleX, dialog.ScaleY, dialog.ScalingMode);
+				_offerActAnchorUpdate(selection, dialog.ScaleX, dialog.ScaleY);
+			}
+		}
+
+		private void _offerActAnchorUpdate(List<int> resizedIndices, float scaleX, float scaleY) {
+			if (_sprFilePath == null) return;
+
+			var tkPath = new TkPath(_sprFilePath);
+
+			if (!string.IsNullOrEmpty(tkPath.RelativePath)) {
+				_offerActAnchorUpdateGrf(tkPath, resizedIndices, scaleX, scaleY);
+			}
+			else {
+				_offerActAnchorUpdateFile(_sprFilePath, resizedIndices, scaleX, scaleY);
+			}
+		}
+
+		private void _offerActAnchorUpdateFile(string sprPath, List<int> resizedIndices, float scaleX, float scaleY) {
+			string actPath = Path.ChangeExtension(sprPath, ".act");
+			if (!File.Exists(actPath)) return;
+
+			if (WindowProvider.ShowDialog(
+				"A corresponding ACT file was found.\n" +
+				"Sprite resizing shifts anchor offsets and may misalign the sprite on the character.\n\n" +
+				"Would you like to update the ACT anchor positions proportionally?",
+				"Update ACT anchors",
+				MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+
+			try {
+				Act act = new Act(actPath, _spr);
+				_applyAnchorUpdate(act, resizedIndices, scaleX, scaleY);
+				act.Save(actPath);
+			}
+			catch (Exception err) {
+				ErrorHandler.HandleException(err);
+			}
+		}
+
+		private void _offerActAnchorUpdateGrf(TkPath tkPath, List<int> resizedIndices, float scaleX, float scaleY) {
+			string relativeActPath = Path.ChangeExtension(tkPath.RelativePath, ".act");
+
+			byte[] dataAct = null;
+			using (GrfHolder grf = new GrfHolder(tkPath.FilePath)) {
+				if (!grf.FileTable.ContainsFile(relativeActPath)) return;
+				dataAct = grf.FileTable[relativeActPath].GetDecompressedData();
+			}
+
+			if (WindowProvider.ShowDialog(
+				"A corresponding ACT file was found in the GRF.\n" +
+				"Sprite resizing shifts anchor offsets and may misalign the sprite on the character.\n\n" +
+				"Would you like to update the ACT anchor positions proportionally?",
+				"Update ACT anchors",
+				MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+
+			try {
+				Act act = new Act(dataAct, _spr);
+				_applyAnchorUpdate(act, resizedIndices, scaleX, scaleY);
+
+				using (var ms = new MemoryStream()) {
+					act.Save(ms);
+					byte[] actBytes = ms.ToArray();
+
+					using (GrfHolder grf = new GrfHolder(tkPath.FilePath)) {
+						grf.Commands.AddFile(relativeActPath, actBytes);
+						grf.Save();
+					}
+				}
+			}
+			catch (Exception err) {
+				ErrorHandler.HandleException(err);
+			}
+		}
+
+		private void _applyAnchorUpdate(Act act, List<int> resizedIndices, float scaleX, float scaleY) {
+			var resizedSet = new HashSet<int>(resizedIndices);
+
+			foreach (var action in act) {
+				foreach (var frame in action.Frames) {
+					if (frame.Anchors.Count == 0) continue;
+
+					Layer refLayer = null;
+					foreach (var layer in frame.Layers) {
+						if (resizedSet.Contains(layer.GetAbsoluteSpriteId(act.Sprite))) {
+							refLayer = layer;
+							break;
+						}
+					}
+
+					if (refLayer == null) continue;
+
+					foreach (var anchor in frame.Anchors) {
+						anchor.OffsetX = (int)Math.Round(refLayer.OffsetX + scaleX * (anchor.OffsetX - refLayer.OffsetX));
+						anchor.OffsetY = (int)Math.Round(refLayer.OffsetY + scaleY * (anchor.OffsetY - refLayer.OffsetY));
+					}
+				}
 			}
 		}
 

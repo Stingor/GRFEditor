@@ -171,6 +171,9 @@
     <Compile Include="Tools\SpriteEditor\SpriteEditorControl.xaml.cs">
       <DependentUpon>SpriteEditorControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Tools\SpriteEditor\ResizeDialog.xaml.cs">
+      <DependentUpon>ResizeDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Core\Services\EncryptionService.cs" />
     <Compile Include="Core\Services\ExtractingService.cs" />
     <Compile Include="Core\Services\OpeningService.cs" />
@@ -435,6 +438,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Tools\SpriteEditor\SpriteEditorControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Tools\SpriteEditor\ResizeDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

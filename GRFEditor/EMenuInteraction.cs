@@ -491,7 +491,11 @@ namespace GRFEditor {
 				string[] files = e.Data.GetData(DataFormats.FileDrop, true) as string[];
 
 				if (files != null && files.Length == 1) {
-					if (files[0].IsExtension(FileFormat.AllContainers.Extensions)) {
+					if (files[0].IsExtension(".spr")) {
+						_openSpriteFile(files[0]);
+						e.Handled = true;
+					}
+					else if (files[0].IsExtension(FileFormat.AllContainers.Extensions)) {
 						Load(files[0]);
 						e.Handled = true;
 					}
@@ -500,6 +504,13 @@ namespace GRFEditor {
 			catch (Exception err) {
 				ErrorHandler.HandleException(err);
 			}
+		}
+
+		internal void _openSpriteFile(string sprPath) {
+			var sprite = new SpriteConverter(new[] { sprPath });
+			_menuItemSpriteConverter.IsEnabled = false;
+			sprite.Closed += (s, a) => _menuItemSpriteConverter.IsEnabled = true;
+			sprite.Show();
 		}
 
 		#endregion

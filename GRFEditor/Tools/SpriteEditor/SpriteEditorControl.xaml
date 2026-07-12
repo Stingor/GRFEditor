@@ -49,6 +49,7 @@
 							<MenuItem Header="Transform">
 								<MenuItem Name="_menuToFlipVert1" Header="Flip vertically" TokeiLibrary:WpfProperties.ImagePath="flip.png" Click="_menuToFlipVert1_Click" />
 								<MenuItem Name="_menuToFlipHoriz1" Header="Flip horizontally" TokeiLibrary:WpfProperties.ImagePath="flip2.png" Click="_menuToFlipHoriz1_Click" />
+								<MenuItem Name="_menuResize1" Header="Resize..." TokeiLibrary:WpfProperties.ImagePath="scale.png" Click="_menuResize1_Click" />
 							</MenuItem>
 						</ContextMenu>
 					</ListView.ContextMenu>
@@ -75,6 +76,7 @@
 							<MenuItem Header="Transform">
 								<MenuItem Name="_menuToFlipVert2" Header="Flip horizontally" TokeiLibrary:WpfProperties.ImagePath="flip.png" Click="_menuToFlipVert2_Click" />
 								<MenuItem Name="_menuToFlipHoriz2" Header="Flip vertically" TokeiLibrary:WpfProperties.ImagePath="flip2.png" Click="_menuToFlipHoriz2_Click" />
+								<MenuItem Name="_menuResize2" Header="Resize..." TokeiLibrary:WpfProperties.ImagePath="scale.png" Click="_menuResize2_Click" />
 							</MenuItem>
 						</ContextMenu>
 					</ListView.ContextMenu>
